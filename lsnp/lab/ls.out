@@ -1,0 +1,14 @@
+child_handler.c
+child_handler.o
+isbuiltin.c
+isbuiltin.o
+ls.out
+main.c
+main.o
+Makefile
+minishell.h
+not_builtin.c
+not_builtin.o
+parsing.c
+parsing.o
+santashell

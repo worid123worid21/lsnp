@@ -1,0 +1,59 @@
+#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h> // pipe() 함수 사용, dup() 함수 사용
+#include <fcntl.h> // 파일 열기 시 플래그(예: O_RDONLY, O_WRONLY, O_CREAT) 등을 정의하여 저수준 파일 I/O
+#include <sys/wait.h> // wait() 사용
+
+#define MAXSIZE 4096
+
+int main(void) {
+
+    int pd[2];
+    pid_t pid;
+    int n;
+    char buf[MAXSIZE];
+    if( pipe(pd) == -1 ) {
+        perror("pipe");
+        exit(1);
+    }
+
+    switch(pid=fork()) {
+
+        case -1:
+            perror("fork");
+            exit(1);
+        break;
+
+        case 0:
+            close(pd[0]);
+            dup2(pd[1], 1);
+            close(pd[1]);
+            execlp("ls", "ls", "-l", (char*) NULL);
+            //strcpy(buf,"Hello, Parent!!");
+            write(pd[1], buf, strlen(buf));
+            exit(1);
+        break;
+
+        default:
+            close(pd[1]);
+            dup2(pd[0], 0);
+            close(pd[0]);
+            execlp("wc", "wc", "-l", (char*) NULL);
+            perror("execlp error");
+            // close(pd[1]);
+            // n=read(pd[0], buf, MAXSIZE);
+            // buf[n]='\0';
+            // close(pd[0]);
+            // printf("PARENT : %s from CHILD\n", buf);
+            // if(waitpid(pid,NULL, 0)==-1) {
+            //     perror("waitpid");
+            //     exit(1);
+            // }
+        break;
+
+        }
+
+    return 0;
+}
