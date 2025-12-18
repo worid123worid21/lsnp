@@ -1,0 +1,2 @@
+CFLAGS=-D_REENTERANT
+LDLIBS=-lpthread
