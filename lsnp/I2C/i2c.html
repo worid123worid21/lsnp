@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sensor & LED Control</title>
+</head>
+<body>
+    <h1>Sensor Monitoring</h1>
+    <p>Light: <span id="light">0</span></p>
+    <p>Temperature: <span id="temp">0</span></p>
+    <p>Potentiometer: <span id="vr">0</span></p>s
+    
+    <h2>LED Control</h2>
+    <label>
+        <input type="radio" name="led" value="on" onclick="setLED('on')">
+        LED ON
+    </label>
+    <label>
+        <input type="radio" name="led" value="off" checked onclick="setLED('off')">
+        LED OFF
+    </label>
+
+    <script>
+        function updateSensor() {
+            fetch("/sensor")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("light").innerText = data.light;
+                    document.getElementById("temp").innerText = data.temp;
+                    document.getElementById("vr").innerText = data.vr;
+                });
+        }
+
+        function setLED(state) {
+            fetch("/led/" + state);
+        }
+
+        setInterval(updateSensor, 1000);
+    </script>
+</body>
+</html>
