@@ -1,32 +1,42 @@
 #include <wiringPi.h>
+#include <pcf8591.h>
 #include <stdio.h>
+#include <stdlib.h>
 
-#define SW 	5 	/* GPIO24 */
-#define CDS 	0 	/* GPIO17 */
-#define LED 	1 	/* GPIO18 */
+#define LED 1        // GPIO18 -> wPi 1
+#define CDS_CH 0     // PCF8591 A0 채널
 
-int cdsControl( )
-{
-    int i;
+#define I2C_ADDR 0x48 // PCF8591 기본 I2C 주소
+#define THRESHOLD 200 // LED ON/OFF 기준값 (0~255)
 
-    pinMode(SW, INPUT); 	/* Pin 모드를 입력으로 설정 */
-    pinMode(CDS, INPUT); 	/* Pin 모드를 입력으로 설정 */
-    pinMode(LED, OUTPUT); 	/* Pin 모드를 출력으로 설정 */
-
-    for (;;) { 			/* 조도 센서 검사를 위해 무한 루프를 실행한다. */
-        if(digitalRead(CDS) == HIGH) { 	/* 빛이 감지되면(HIGH) */
-            digitalWrite(LED, HIGH); 	/* LED 켜기(On) */
-            delay(1000);
-            digitalWrite(LED, LOW); 	/* LED 끄기(Off) */
-        }
+// PCF8591 초기화
+void setupPCF8591() {
+    if (pcf8591Setup(I2C_ADDR, I2C_ADDR) == -1) {
+        printf("PCF8591 초기화 실패!\n");
+        exit(1);
     }
-
-    return 0;
 }
 
-int main( )
-{
-    wiringPiSetup( );
-    cdsControl( ); 		/* 조도 센서 사용을 위한 함수 호출 */
+int main(void) {
+    wiringPiSetup();           // wPi 번호 기준 초기화
+    pinMode(LED, OUTPUT);      // LED 출력 설정
+
+    setupPCF8591();            // PCF8591 초기화
+
+    int cdsValue;
+
+    while (1) {
+        cdsValue = analogRead(I2C_ADDR + CDS_CH); // A0 값 읽기 (0~255)
+        printf("조도값: %d\n", cdsValue);
+
+        if (cdsValue < THRESHOLD) {
+            digitalWrite(LED, LOW);  // 어두움 → LED ON
+        } else {
+            digitalWrite(LED, HIGH);   // 밝음 → LED OFF
+        }
+
+        delay(500); // 0.5초마다 갱신
+    }
+
     return 0;
 }

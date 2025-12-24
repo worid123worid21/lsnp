@@ -1,33 +1,40 @@
+//led_pwm
 #include <wiringPi.h>
 #include <softPwm.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-void ledPwmControl(int gpio)
+#define SW   5   /* GPIO24 */
+#define LED  1   /* GPIO18 */
+
+/* 밝기 단계 (0~255) */
+int brightness[4] = { 0, 80, 160, 255 };
+
+int main(void)
 {
-    pinMode(gpio, OUTPUT); 		/* Pin의 출력 설정 */
-    softPwmCreate(gpio, 0, 255); 	/* PWM의 범위 설정 */
+    int state = 0;          /* 현재 밝기 상태 */
+    int prevSw = HIGH;      /* 이전 버튼 상태 */
 
-    for(int i = 0; i < 10000; i++) {
-        softPwmWrite(gpio, i&255); 	/* PWM 값을 출력: LED 켜기 */
-        delay(5);
+    wiringPiSetup();
+
+    pinMode(SW, INPUT);
+    pullUpDnControl(SW, PUD_UP);   /* 풀업 */
+    pinMode(LED, OUTPUT);
+
+    softPwmCreate(LED, 0, 255);
+
+    while (1) {
+        int currSw = digitalRead(SW);
+
+        /* 버튼 눌림 감지 (HIGH → LOW) */
+        if (prevSw == HIGH && currSw == LOW) {
+            state = (state + 1) % 4;                 /* 상태 변경 */
+            softPwmWrite(LED, brightness[state]);    /* 밝기 변경 */
+            delay(200);  /* 디바운싱 */
+        }
+
+        prevSw = currSw;
+        delay(20);
     }
-
-    softPwmWrite(gpio, 0); 		/* LED 끄기 */
-}
-
-int main(int argc, char **argv)
-{
-    int gno;
-
-    if(argc < 2) {
-        printf("Usage : %s GPIO_NO\n", argv[0]);
-        return -1;
-    }
-
-    gno = atoi(argv[1]);
-    wiringPiSetup( ); 			/* wiringPi 초기화 */
-    ledPwmControl(gno);
 
     return 0;
 }
