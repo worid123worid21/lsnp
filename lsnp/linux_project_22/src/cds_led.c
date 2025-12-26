@@ -8,7 +8,7 @@
 #define LED 1
 #define CDS_CH 0
 #define I2C_ADDR 0x48
-#define THRESHOLD 225
+#define THRESHOLD 200
 
 void setupCDSLED() {
     //wiringPiSetup(); -> 중복 문제 때문에 제거
