@@ -46,17 +46,16 @@ int main(){
         fflush(stdout);
 
         if(!fgets(buf,sizeof(buf),stdin)) continue;
-        buf[strcspn(buf,"\n")] = 0; // 개행 제거
+        buf[strcspn(buf,"\n")] = 0;
 
         if(strlen(buf)==0) continue;
 
         if(strcmp(buf,"0")==0 || strcasecmp(buf,"EXIT")==0){
-            write(sock,"EXIT",4);
+            write(sock,"EXIT",5);
             break;
         }
 
-        int n = write(sock, buf, strlen(buf));
-        if(n < 0){
+        if(write(sock, buf, strlen(buf)+1) < 0){
             perror("write");
             break;
         }
