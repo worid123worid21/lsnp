@@ -1,0 +1,207 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{longtable}
+\usepackage{float}
+\geometry{margin=2cm}
+
+\title{TCP 기반 원격 장치 제어 시스템 보고서}
+\author{suseok}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{프로젝트 개요}
+
+본 프로젝트는 TCP 통신을 이용한 원격 장치 제어 시스템을 구현하는 것을 목표로 한다.  
+서버는 Raspberry Pi 4에서 동작하며, 클라이언트는 Ubuntu Linux 환경에서 실행된다.  
+
+\begin{itemize}
+    \item 서버는 데몬(Daemon) 프로세스로 동작하며, 터미널과 독립적으로 백그라운드 실행 가능
+    \item 각 장치는 동적 라이브러리(.so)로 분리되어 기능 확장 가능
+    \item Ubuntu에서 크로스 컴파일 지원
+\end{itemize}
+
+\section{개발 환경}
+
+\begin{longtable}{|l|l|}
+\hline
+\textbf{항목} & \textbf{환경} \\
+\hline
+Server OS & Raspberry Pi OS (Raspberry Pi 4) \\
+Client OS & Ubuntu Linux \\
+Language & C \\
+Build Tool & Make \\
+라이브러리 & pthread, dlopen/dlsym, wiringPi, I2C(PCF8591) \\
+\hline
+\end{longtable}
+
+\section{사용 장치}
+
+\begin{itemize}
+    \item LED (220Ω 저항 사용)
+    \item CDS 센서 (PCF8591 I2C)
+    \item 부저 (FQ-035)
+    \item 7-Segment (s-5101asr)
+    \item PWM LED
+    \item 스위치 입력
+\end{itemize}
+
+\section{전체 시스템 구조}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{system_block.png}
+\caption{TCP 기반 원격 장치 제어 시스템 블록 구조}
+\end{figure}
+
+\begin{verbatim}
+Client (Ubuntu)
+   │
+   │ TCP Command
+   ▼
+Server (Raspberry Pi, Daemon)
+   │
+   ├─ dlopen() → 동적 라이브러리 로드
+   ├─ pthread → 멀티 스레드 장치 제어
+   │
+   ├─ libcds_led.so → CDS 센서 기반 LED 제어
+   ├─ libled_pwm.so → PWM LED 제어
+   ├─ libmusic.so   → 부저 음악 재생
+   └─ libsegment.so → 7-Segment 표시
+\end{verbatim}
+
+\section{디렉터리 구조}
+
+\begin{verbatim}
+project/
+├── rpi_headers/
+├── include/
+├── src/
+├── lib/
+├── Makefile
+├── main
+├── client
+└── README.md
+\end{verbatim}
+
+\section{구현 내용}
+
+\subsection{TCP 서버}
+\begin{itemize}
+    \item TCP 포트 5000 사용
+    \item 클라이언트 명령 수신 후 장치 제어
+    \item SIGINT(Ctrl+C) 시 정상 종료 처리
+    \item 서버 종료 시 실행 중인 모든 장치 스레드 정리
+\end{itemize}
+
+\subsection{데몬 프로세스}
+\begin{itemize}
+    \item fork(), setsid() 사용
+    \item 백그라운드에서 안정적 실행 가능
+\end{itemize}
+
+\subsection{동적 라이브러리 구조}
+\begin{itemize}
+    \item 각 장치는 독립 `.so` 라이브러리
+    \item dlopen/dlsym으로 런타임 로드
+\end{itemize}
+
+\subsection{멀티 스레드 장치 제어}
+\begin{itemize}
+    \item 별도의 스레드에서 장치 제어
+    \item running 플래그 사용
+    \item pthread\_join으로 종료 대기
+\end{itemize}
+
+\subsection{장치별 기능}
+
+\begin{itemize}
+    \item \textbf{CDS + LED:} CDS 센서 값 읽어 LED ON/OFF 제어 (조도값 0~255)
+    \item \textbf{PWM LED:} 스위치 입력에 따라 밝기 단계 조절 (softPwm 사용)
+    \item \textbf{Music / Buzzer:} 스위치 입력 시 멜로디 재생, 정지 가능
+    \item \textbf{7-Segment:} 입력 숫자부터 0까지 카운트다운, 종료 후 음계 재생
+\end{itemize}
+
+\section{명령 프로토콜 (Client → Server)}
+
+\begin{longtable}{|l|l|}
+\hline
+\textbf{명령} & \textbf{동작} \\
+\hline
+cds  & CDS LED 시작 \\
+cs   & CDS LED 정지 \\
+led  & PWM LED 시작 \\
+ls   & PWM LED 정지 \\
+mus  & 음악 재생 시작 \\
+ms   & 음악 정지 \\
+sN   & 7-Segment N부터 카운트다운 \\
+ss   & 7-Segment 정지 \\
+EXIT & 서버 종료 \\
+\hline
+\end{longtable}
+
+\section{빌드 및 실행}
+
+\subsection{빌드}
+\begin{verbatim}
+make
+\end{verbatim}
+
+\subsection{실행}
+\begin{verbatim}
+export LD_LIBRARY_PATH=./lib
+./main
+\end{verbatim}
+
+\section{특징 및 장점}
+
+\begin{itemize}
+    \item 동적 라이브러리 기반 확장성
+    \item 멀티 스레드 기반 동시 장치 제어
+    \item 데몬 프로세스 안정적 운영
+    \item 장치 코드와 서버 로직 분리
+\end{itemize}
+
+\section{결론}
+
+TCP 통신, 데몬 프로세스, 멀티 스레드, 동적 라이브러리를 통합하여  
+리눅스 기반 임베디드 시스템에서 확장 가능하고 안정적인 원격 제어 구조 구현
+
+\section{실제 시연 방법}
+
+\subsection{소프트웨어}
+
+\begin{enumerate}
+    \item Ubuntu에서 프로젝트 루트로 이동
+    \item rpi\_headers 생성 후 헤더 복사
+    \item make로 실행 파일 및 라이브러리 생성
+    \item Raspberry Pi로 서버와 lib/ 전송
+    \item Raspberry Pi에서 ./main 실행
+    \item 클라이언트에서 접속
+    \item 로그 확인: \verb|cat /home/suseok/daemon.log|
+\end{enumerate}
+
+\subsection{하드웨어 연결}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.7\textwidth]{circuit_diagram.png}
+\caption{라즈베리파이 장치 연결 예시 회로}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{7-Segment GPIO:} a:23, b:22, c:27, d:28, e:29, f:24, g:25, dp:26(미사용)
+    \item \textbf{I2C (PCF8591):} SDA:BCM2, SCL:BCM3, GND:0V
+    \item \textbf{부저:} GPIO25, GND
+    \item \textbf{스위치:} SW1:GPIO5, SW2:GPIO4
+\end{itemize}
+
+\end{document}

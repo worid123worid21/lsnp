@@ -1,0 +1,4 @@
+    PID TTY          TIME CMD
+   2465 pts/4    00:00:00 bash
+  78846 pts/4    00:00:00 santashell
+  78912 pts/4    00:00:00 ps
