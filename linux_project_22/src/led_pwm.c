@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <wiringPi.h>
-#include <softPwm.h>
-#include <pthread.h>
 #include "led_pwm.h"
 
 #define SW 5

@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <wiringPi.h>
-#include <softTone.h>
-#include <pthread.h>
 #include "music.h"
 
 #define SPKR 6

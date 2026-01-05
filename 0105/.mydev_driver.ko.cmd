@@ -1,0 +1,1 @@
+savedcmd_/home/changjoh/lsnp/0105/mydev_driver.ko := aarch64-linux-gnu-ld -r -EL  -maarch64elf -z noexecstack --no-warn-rwx-segments --build-id=sha1  -T scripts/module.lds -o /home/changjoh/lsnp/0105/mydev_driver.ko /home/changjoh/lsnp/0105/mydev_driver.o /home/changjoh/lsnp/0105/mydev_driver.mod.o /home/changjoh/lsnp/0105/.module-common.o

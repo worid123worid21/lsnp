@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <wiringPi.h>
-#include <pcf8591.h>
-#include <pthread.h>
 #include "cds_led.h"
 
 #define LED 1

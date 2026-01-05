@@ -1,8 +1,4 @@
 #include "device.h"  // SegmentArg 포함
-#include <wiringPi.h>
-#include <softTone.h>
-#include <unistd.h>
-#include <stdlib.h>
 
 #define A 23
 #define B 22
